@@ -1,58 +1,61 @@
-import * as minecraftVersions from "./versions";
-import * as settings from "../settings";
+import * as datamanager from "@/main/data_old/datamanager";
 import {
   getVersionList,
   installOptifine,
-  MinecraftVersionBaseInfo,
   installTask,
+  MinecraftVersionBaseInfo,
 } from "@xmcl/installer";
-import { Optifine } from "./optifine";
-import * as tmp from "tmp-promise";
-import { ChildProcess } from "child_process";
-import { launch, MinecraftLocation, ResolvedVersion } from "@xmcl/core";
-import * as sync from "./sync";
+import { EventEmitter } from "events";
+import { launch, MinecraftLocation, MinecraftPath, ResolvedVersion } from "@xmcl/core";
 import { Task } from "@xmcl/task";
-import { WebContents } from "electron";
+import { Optifine } from "@/main/optifine/Optifine";
+import { OptifineDownloader } from "@/main/optifine/OptifineDownloader";
 import { Authentication, offline } from "@xmcl/user";
+import * as sync from "@/main/data_old/sync";
+import { ChildProcess } from "child_process";
+import * as tmp from "tmp-promise";
+import { VersionUtils } from "@/main/versions/VersionUtils";
 
-export class Launcher {
-  private readonly webContents: WebContents;
-  constructor(webContents: WebContents) {
-    this.webContents = webContents;
+export class Launcher extends EventEmitter {
+  constructor(private versionUtils: VersionUtils) {
+    super();
   }
-
-  async play(
+  async launch(
     version: string,
     useOptiFine = true,
     username = "player"
   ): Promise<void> {
-    const instance = await minecraftVersions.getSubVer(version);
-    const minecraftLocation = settings.getMinecraftPath();
+    const minor = await this.versionUtils.getMinor(version);
+    const minecraftLocation = datamanager.getPath("minecraft");
     const minecraftVersion = (await getVersionList()).versions.find(
       (value) => value.id == version
     );
-    if (minecraftVersion == undefined) return;
-
-    this.webContents.send("progress", { value: 0, text: "Загрузка" });
-
-    await this.installProgress(minecraftVersion, minecraftLocation);
-
-    let fullVersionName = minecraftVersion.id;
+    if (minecraftVersion) {
+      this.emit("progress", { value: 0, text: "Загрузка" });
+      await this.installProgress(minecraftVersion, minecraftLocation);
+    }
+    let fullVersionName = version;
     if (useOptiFine) {
       const optifine = new Optifine();
-      optifine.on("download-status", (status) => {
-        this.webContents.send("progress", {
+      const optifineDownloader = new OptifineDownloader();
+      optifineDownloader.on("download-status", (status) => {
+        this.emit("progress", {
           value: status["current"] / status["total"],
           text: "Загрузка OptiFine",
         });
       });
-      const optifineVersion = await optifine.getOptifineVersion(version);
+      const optifineVersion = await optifine.getLatestOptifineVersion(version);
       if (optifineVersion != null) {
-        if (await optifine.isInstalled(optifineVersion)) {
-          fullVersionName = optifine.getMinecraftVersionName(optifineVersion);
+        if (await optifineDownloader.isInstalled(optifineVersion)) {
+          fullVersionName = optifineDownloader.getMinecraftVersionName(
+            optifineVersion
+          );
         } else {
           const tempFileOF = await tmp.file();
-          await optifine.downloadOptifineJar(optifineVersion, tempFileOF.path);
+          await optifineDownloader.downloadOptifineJar(
+            optifineVersion,
+            tempFileOF.path
+          );
           fullVersionName = await installOptifine(
             tempFileOF.path,
             minecraftLocation
@@ -60,25 +63,25 @@ export class Launcher {
         }
       }
     }
-    this.webContents.send("progress", { value: -1, text: "" });
+    this.emit("progress", { value: -1, text: "" });
 
     const authOffline: Authentication = offline(username);
 
     const javaPath = "java";
-    const gamePath: string = settings.getInstancesPath(instance);
-    await sync.load(instance);
+    const gamePath: string = datamanager.getPath("instances", minor);
+    await sync.load(minor);
     const proc: ChildProcess = await launch({
       gameProfile: authOffline.selectedProfile,
       gamePath,
       javaPath,
       version: fullVersionName,
       resourcePath: minecraftLocation,
-      nativeRoot: settings.getMinecraftPath("natives", version),
+      nativeRoot: datamanager.getPath("minecraft", "natives", version),
       versionType: "Meloncher",
     });
     proc.on("close", () => {
       console.log("close");
-      sync.save(instance);
+      sync.save(minor);
     });
   }
 
@@ -90,10 +93,10 @@ export class Launcher {
       versionMeta,
       minecraft
     );
-    const webContents = this.webContents;
+    // const emit = this.emit;
     await installAllTask.startAndWait({
-      onUpdate() {
-        webContents.send("progress", {
+      onUpdate: () => {
+        this.emit("progress", {
           value: installAllTask.progress / installAllTask.total,
           text: "Загрузка Minecraft",
         });

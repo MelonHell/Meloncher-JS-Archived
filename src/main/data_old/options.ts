@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as gameSettings from "@xmcl/gamesetting";
-import * as settings from "../settings";
+import * as datamanager from "./datamanager";
 import * as files from "../utils/files";
 import * as options_data from "./options.data";
 
@@ -9,7 +9,10 @@ export enum OptionsType {
   Optifine,
 }
 
-const minecraft_options_file = settings.getSyncPath("minecraft_options.json");
+const minecraft_options_file = datamanager.getPath(
+  "data",
+  "minecraft_options.json"
+);
 
 export async function loadOptions(
   optionsType: OptionsType,
@@ -31,7 +34,8 @@ async function getFromInstance(
   optionsType: OptionsType,
   instance: string
 ): Promise<Record<string, unknown>> {
-  const file = settings.getInstancesPath(
+  const file = datamanager.getPath(
+    "instances",
     instance,
     ["options.txt", "optionsof.txt"][optionsType]
   );
@@ -74,8 +78,9 @@ async function saveToInstance(
   optionsType: OptionsType,
   instance: string
 ) {
-  files.makeDirIfNotExist(settings.getInstancesPath(instance));
-  const file = settings.getInstancesPath(
+  files.makeDirIfNotExist(datamanager.getPath("instances", instance));
+  const file = datamanager.getPath(
+    "instances",
     instance,
     ["options.txt", "optionsof.txt"][optionsType]
   );
@@ -87,7 +92,7 @@ async function saveToSync(
   optionsType: OptionsType,
   instance: string
 ) {
-  files.makeDirIfNotExist(settings.getSyncPath());
+  files.makeDirIfNotExist(datamanager.getPath("data"));
   const minecraftOptions = await getMinecraftOptions();
   const key = ["minecraft", "optifine"][optionsType];
   // @ts-ignore

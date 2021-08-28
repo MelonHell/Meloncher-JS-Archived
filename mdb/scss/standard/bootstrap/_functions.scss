@@ -81,7 +81,7 @@
 
 // See https://codepen.io/kevinweber/pen/dXWoRw
 //
-// Requires the use of quotes around data URIs.
+// Requires the use of quotes around data_old URIs.
 
 @function escape-svg($string) {
   @if str-index($string, 'data:image/svg+xml') {

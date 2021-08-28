@@ -3,7 +3,8 @@
 import { app, protocol, BrowserWindow, ipcMain } from "electron";
 import { createProtocol } from "vue-cli-plugin-electron-builder/lib";
 import installExtension, { VUEJS_DEVTOOLS } from "electron-devtools-installer";
-import { Launcher } from "@/main/launcher/launcher";
+import { Launcher } from "@/main/launcher/Launcher";
+import { VersionUtils } from "@/main/versions/VersionUtils";
 const isDevelopment = process.env.NODE_ENV !== "production";
 
 // Scheme must be registered before the app is ready
@@ -41,9 +42,12 @@ async function createWindow() {
     // Load the index.html when not in development
     win.loadURL("app://./index.html");
   }
-  const launcher = new Launcher(win.webContents);
+  const launcher = new Launcher(new VersionUtils());
+  launcher.on("progress", (status: unknown) => {
+    win.webContents.send("progress", status);
+  });
   ipcMain.on("play", (event, args) => {
-    launcher.play(args["version"], true, args["username"]);
+    launcher.launch(args["version"], true, args["username"]);
   });
 }
 
