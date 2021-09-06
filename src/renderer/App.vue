@@ -18,6 +18,8 @@
           <MDBBtn color="primary" v-if="progress.value < 0" @click="playButton"
             >Играть</MDBBtn
           >
+          <MDBInput v-model="console" />
+          <MDBBtn color="primary" @click="consoleButton">Send</MDBBtn>
           <!--        <span v-if="progress.value >= 0"-->
           <!--          >{{ progress.text }}: {{ progress.value * 100 }}%</span-->
           <!--        >-->
@@ -33,7 +35,7 @@
       <MDBContainer class="p-4">
         <MDBDropdown dropup v-model="dropdown2">
           <MDBDropdownToggle @click="dropdown2 = !dropdown2"
-          >Версия</MDBDropdownToggle
+            >Версия</MDBDropdownToggle
           >
           <MDBDropdownMenu aria-labelledby="dropdownMenuButton">
             <MDBDropdownItem href="#">1</MDBDropdownItem>
@@ -51,9 +53,7 @@
             <MDBDropdownItem href="#">Сожрать говно</MDBDropdownItem>
             <MDBDropdownItem divider />
             <form class="input-group">
-              <MDBInput
-                label="Войти по нику"
-              />
+              <MDBInput label="Войти по нику" />
               <MDBBtn>Войти</MDBBtn>
             </form>
           </MDBDropdownMenu>
@@ -96,8 +96,9 @@ export default defineComponent({
   },
   data() {
     return {
+      console: "",
       version: "1.16.5",
-      username: "player",
+      username: "Pidoras",
       progress: {
         value: -1,
         text: "",
@@ -122,6 +123,11 @@ export default defineComponent({
     MDBContainer,
   },
   methods: {
+    consoleButton() {
+      ipcRenderer.send("console", {
+        text: this.console,
+      });
+    },
     playButton() {
       ipcRenderer.send("play", {
         version: this.version,
