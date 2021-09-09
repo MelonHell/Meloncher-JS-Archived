@@ -16,8 +16,9 @@ import { IFilesystem } from "@/main/data/IFilesystem";
 import path from "path";
 import { Sync } from "@/main/data_old/Sync";
 import rp from "request-promise";
-import { MojangJavaDownloader } from "@/main/java/MojangJavaDownloader";
 import { ZuluJavaDownloader } from "@/main/java/ZuluJavaDownloader";
+// @ts-ignore
+import { Window, WindowStates } from "win-control";
 
 export class Launcher extends EventEmitter {
   constructor(
@@ -79,7 +80,7 @@ export class Launcher extends EventEmitter {
           optifineDownloader.on("progress", (status) => {
             this.emit("progress", {
               value: status["current"] / status["total"],
-              text: "Загрузка OptiFine",
+              text: "Загрузка OptiFine (" + optifineVersion.filename + ")",
             });
           });
           await optifineDownloader.start();
@@ -112,11 +113,33 @@ export class Launcher extends EventEmitter {
       resourcePath: minecraftLocation,
       nativeRoot: path.resolve(this.filesystem.nativesDir, version),
       versionType: "Meloncher",
+      // extraJVMArgs: [
+      //   "-Dorg.lwjgl.opengl.Window.undecorated=true"
+      // ],
+      // resolution: {
+      //   width: 1920,
+      //   height: 1080,
+      // },
     });
+
+    if (proc.pid) this.maximize(proc.pid).then();
+
     proc.on("close", () => {
       console.log("close");
       this.sync.save(minor);
     });
+  }
+
+  async maximize(pid: number, attempts = 20): Promise<boolean> {
+    for (let i = 0; i < attempts; i++) {
+      const win = Window.getByPid(pid);
+      if (win) {
+        win.setShowStatus(WindowStates.SHOWMAXIMIZED);
+        return true;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+    return false;
   }
 
   async installProgress(
@@ -128,12 +151,25 @@ export class Launcher extends EventEmitter {
       minecraft
     );
     // const emit = this.emit;
+    let name = "";
     await installAllTask.startAndWait({
-      onUpdate: () => {
-        this.emit("progress", {
-          value: installAllTask.progress / installAllTask.total,
-          text: "Загрузка Minecraft",
-        });
+      onStart(task: Task<any>) {
+        // a task start
+        // task.path show the path
+        // task.name is the name
+        name = task.name;
+        console.log(task.path);
+        console.log(task.name);
+      },
+      onUpdate: (task, chunkSize) => {
+        if (
+          ["json", "jar", "assetsJson", "asset", "library"].includes(task.name)
+        )
+          // if (task.name != "dependencies")
+          this.emit("progress", {
+            value: installAllTask.progress / installAllTask.total,
+            text: "Загрузка Minecraft (" + task.name + ")",
+          });
       },
     });
   }

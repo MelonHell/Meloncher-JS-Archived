@@ -23,6 +23,7 @@ async function createWindow() {
     height: 600,
     minWidth: 960,
     minHeight: 600,
+    show: false,
     autoHideMenuBar: true,
     // transparent: true,
     // frame: false,
@@ -35,6 +36,10 @@ async function createWindow() {
         .ELECTRON_NODE_INTEGRATION as unknown) as boolean,
       contextIsolation: false,
     },
+  });
+
+  win.once("ready-to-show", () => {
+    win.show();
   });
 
   if (process.env.WEBPACK_DEV_SERVER_URL) {
