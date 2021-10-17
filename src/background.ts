@@ -1,14 +1,9 @@
 "use strict";
 
-import { app, protocol, BrowserWindow, ipcMain } from "electron";
+import { app, protocol, BrowserWindow } from "electron";
 import { createProtocol } from "vue-cli-plugin-electron-builder/lib";
 import installExtension, { VUEJS_DEVTOOLS } from "electron-devtools-installer";
-import { Launcher } from "@/main/launcher/Launcher";
-import { VersionUtils } from "@/main/versions/VersionUtils";
-import { Sync } from "@/main/data_old/Sync";
-import { TestFilesystem } from "@/main/data/TestFilesystem";
-import { Options } from "@/main/data_old/Options";
-import { Console } from "@/main/Console";
+import { Main } from "@/main/Main";
 const isDevelopment = process.env.NODE_ENV !== "production";
 
 // Scheme must be registered before the app is ready
@@ -51,21 +46,7 @@ async function createWindow() {
     // Load the index.html when not in development
     win.loadURL("app://./index.html");
   }
-  const filesystem = new TestFilesystem();
-  const options = new Options(filesystem);
-  const sync = new Sync(filesystem, options);
-  const versionUtils = new VersionUtils();
-  const launcher = new Launcher(versionUtils, filesystem, sync);
-  launcher.on("progress", (status: unknown) => {
-    win.webContents.send("progress", status);
-  });
-  ipcMain.on("play", (event, args) => {
-    launcher.launch(args["version"], true, args["username"]);
-  });
-  const console = new Console();
-  ipcMain.on("console", (event, args) => {
-    console.run(args["text"]);
-  });
+  new Main(win).init();
 }
 
 // Quit when all windows are closed.

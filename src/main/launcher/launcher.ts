@@ -19,6 +19,8 @@ import rp from "request-promise";
 import { ZuluJavaDownloader } from "@/main/java/ZuluJavaDownloader";
 // @ts-ignore
 import { Window, WindowStates } from "win-control";
+import { AccountStorage } from "@/main/accounts/AccountStorage";
+import { Account } from "@/main/accounts/account/Account";
 
 export class Launcher extends EventEmitter {
   constructor(
@@ -28,11 +30,7 @@ export class Launcher extends EventEmitter {
   ) {
     super();
   }
-  async launch(
-    version: string,
-    useOptiFine = true,
-    username = "player"
-  ): Promise<void> {
+  async launch(version: string, useOptiFine = true, account: Account): Promise<void> {
     const minor = await this.versionUtils.getMinor(version);
     const minecraftLocation = this.filesystem.minecraftDir;
     const minecraftVersion = (await getVersionList()).versions.find(
@@ -93,7 +91,17 @@ export class Launcher extends EventEmitter {
     }
     this.emit("progress", { value: -1, text: "" });
 
-    const authOffline: Authentication = offline(username);
+    // const msauth = new MojangAuth();
+    // const test: Account = await msauth.auth(
+    //   "Ruth.Smith1998j@rambler.ru",
+    //   "MarsikLubitSpermu228"
+    // );
+    // const as = new AccountStorage(this.filesystem);
+    // const accounts = await as.load();
+    // // const test = await new MicrosoftAuth().auth();
+    // // accounts.push(test);
+    // // await as.save(accounts);
+    // const test = accounts[0];
 
     const javaPath = path.resolve(
       this.filesystem.runtimeDir,
@@ -106,7 +114,11 @@ export class Launcher extends EventEmitter {
     );
     await this.sync.load(minor);
     const proc: ChildProcess = await launch({
-      gameProfile: authOffline.selectedProfile,
+      gameProfile: {
+        name: account.name,
+        id: account.uuid,
+      },
+      accessToken: account.accessToken,
       gamePath,
       javaPath,
       version: fullVersionName,
@@ -151,16 +163,7 @@ export class Launcher extends EventEmitter {
       minecraft
     );
     // const emit = this.emit;
-    let name = "";
     await installAllTask.startAndWait({
-      onStart(task: Task<any>) {
-        // a task start
-        // task.path show the path
-        // task.name is the name
-        name = task.name;
-        console.log(task.path);
-        console.log(task.name);
-      },
       onUpdate: (task, chunkSize) => {
         if (
           ["json", "jar", "assetsJson", "asset", "library"].includes(task.name)

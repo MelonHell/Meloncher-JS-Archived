@@ -10,4 +10,5 @@ export class TestFilesystem implements IFilesystem {
   modpackProfiles = path.resolve(this.mainDir, "./profiles/modpacks");
   runtimeDir = path.resolve(this.mainDir, "./runtime");
   versionProfiles = path.resolve(this.mainDir, "./profiles/versions");
+  launcherAccounts = path.resolve(this.mainDir, "./launcher_accounts.json")
 }

@@ -15,6 +15,8 @@
   "main": "background.js",
   "dependencies": {
     "extract-zip": "^2.0.1",
+    "msmc": "^2.2.1",
+    "node-fetch": "^2.6.2",
     "request-promise": "^4.2.6",
     "vue": "^3.2.9",
     "vue-router": "^4.0.11",

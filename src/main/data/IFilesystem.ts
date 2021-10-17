@@ -6,5 +6,6 @@ export interface IFilesystem {
   modpackProfiles: string;
   runtimeDir: string;
   launcherOptions: string;
+  launcherAccounts: string;
   minecraftOptions: string;
 }

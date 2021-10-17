@@ -6,7 +6,11 @@
     <div class="footer">
       <button class="play-button" @click="playButton">Играть</button>
     </div>
-    <ProgressBar v-if="progress.value >= 0" :progress="progress.value" :text="progress.text"></ProgressBar>
+    <ProgressBar
+      v-if="progress.value >= 0"
+      :progress="progress.value"
+      :text="progress.text"
+    ></ProgressBar>
   </div>
 </template>
 
@@ -59,17 +63,19 @@ $accent-color: #aa0000;
 }
 .footer {
   flex: 0 0 60px;
+  display: flex;
+  justify-content: center;
   background: #262626;
 }
 .play-button {
-  position: fixed;
+  //position: fixed;
   background-color: $accent-color;
   //background-image: url("../img/play_button.png");
   height: 50px;
   width: 244px;
   outline: 2px solid black;
   left: 50%;
-  transform: translateX(-50%) translateY(-12px);
+  //transform: translateX(-50%) translateY(-12px);
   display: block;
   color: white;
   //font-family: MinecraftTen, sans-serif;
